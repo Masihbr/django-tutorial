@@ -42,6 +42,8 @@
 ### DELETE
 این متود برای حذف یک آبجکت استفاده می‌شود.
 
+</br>
+
 ## راه‌اندازی اولیه
 مطابق توضیحات داده شده در بخش جنگو یک پروژه میسازیم. سپس djangorestframework را نصب می‌کنیم.
 
@@ -72,6 +74,8 @@ INSTALLED_APPS = [
 
 به طور کلی روند طراحی API به این صورت است که ما مدل‌های لازم برای پروژه خود را تعریف می‌کنیم. سپس APIهای لازم را بررسی و طراحی می‌کنیم. برای این‌کار باید ویو و سریالایزر را تعریف کنیم که در ادامه به بررسی آن‌ها می‌پردازیم.
 
+</br>
+
 
 ### Serializer
 سریالایزر یک شی را به دیکشنری در پایتون تبدیل می‌کند و  در نتیجه می‌توان از آن در پاسخ(response) APIها استفاده کرد(به فرمت‌های رایج JSON, XML, ...).
@@ -93,6 +97,7 @@ class PostSerializer(serializers.ModelSerializer):
 </div>
 این سریالایزر همه‌ی فیلدهای پست را شامل می‌شود و همچنین فیلد author را read only کرده است؛ بدین معنی که در هنگام ساخت و یا آپدیت مدل این فیلد توسط ورودی مقداردهی نخواهد شد.
 
+</br>
 
 ### View
 ویوها را می‌توان به دو دسته تقسیم کرد: 
@@ -165,6 +170,37 @@ urlpatterns = [
  ```
  </div>
 
+</br>
 
+### Authentication & Permissions
+روش‌های مختلفی برای authentication وجود دارد. ساده‌ترین روش اضافه کردن کد زیر به settings.py است:
+
+<div dir="ltr">
+
+```py
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication'
+    ]
+}
+```
+</div>
+
+با انجام این‌کار ‌و اضافه کردن کد زیر به ویو:
+
+<div dir="ltr">
+
+```py
+    permission_classes = [IsAuthenticated]
+```
+</div>
+
+می‌توان API را محدود به کاربران احراز هویت شده کرد.
+
+روش‌های دیگر برای احراز هویت:
+
+- TokenAuthentication
+- JSON Web Token Authentication ([djangorestframework-simplejwt](https://github.com/davesque/django-rest-framework-simplejwt))
 
 </div>
