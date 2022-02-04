@@ -1,5 +1,5 @@
 {% extends 'posts/base.html'%} {% block title %} Create A New Blog Post
-{%endblock %} {% block content %}
+{%endblock %} {% block content %} {% if user.is_authenticated%}
 <h1>Add Post...</h1>
 <br />
 
@@ -9,4 +9,4 @@
     <button class="btn btn-secondary">post</button>
   </form>
 </div>
-{% endblock %}
+{%else%} you are not allowed here{%endif%} {% endblock %}

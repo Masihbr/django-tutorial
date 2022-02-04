@@ -1007,7 +1007,6 @@ class Post(models.Model):
 
 اتریبیوت auto_now_add تنها در زمان ساخته شدن آبجکت مقدار ست میکند اما auto_now به ازای هر تغییر در دیتابیس مقدار جدید برای خود میگیرد.
 
-
 سپس makemigrations و مایگریشن را انجام میدهیم. هنکگام ساختن مایگریشن با پیامی مواجه میشویم که باید مقدار دیفالت برای این فیلد ها داشته باشیم. این به دلیل وجود پست هایی از قبل در داخل دیتابیس است که قبل از این تغییرات چنین فیلد هایی نداشتند پس باید یک مقدار دیفالت داشته باشندم برای راحتی میتوان گزینه 1 را انتخاب کرد و از مقدار دیفالت timezone.now استقفاده کرد.
 
 و سپس داریم
@@ -1079,3 +1078,130 @@ class HomeView(ListView):
 </ul>
 {% endblock %}
 ```
+
+### اضافه کردت authentication
+
+در این قسمت قرار است login و register رو با استفاده از توابع آماده در جنگو پیاده سازی کنیم.
+
+برای اینکار ابتدا یک app جدید به نام members میسازیم:
+
+```
+python manage.py startapp members
+```
+
+و در settings اضافه میکنیم:
+
+```py
+# settings.py
+INSTALLED_APPS = [
+    # other apps,
+    "posts",
+    "members",
+]
+```
+
+همچنین در قسمت myfirstblog/urls.py تغییرات زیر رو اعمال میکنیم:
+
+```py
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("posts/", include("posts.urls")),
+    path("members/", include("django.contrib.auth.urls")),
+    path("members/", include("members.urls")),
+]
+```
+
+یوآرال‌های موجود در django.contrib.auth.urls شامل url هایی مثل /login, /logout هستن که خود جنگو این هارو implement کرده.
+
+همچنین لازمه در settings.py لینک صفحه بعد از login و logout شدن رو ست کنیم:
+
+```py
+# settings.py
+
+LOGIN_REDIRECT_URL = "home"
+LOGOUT_REDIRECT_URL = "home"
+```
+
+حال در members/views.py ویو مورد نظر برای registeration رو میسازیم:
+
+```py
+# members/views.py
+from django.urls import reverse_lazy
+from django.views.generic import CreateView
+from django.contrib.auth.forms import UserCreationForm
+
+
+class UserRegisterView(CreateView):
+    form_class = UserCreationForm
+    template_name = "registration/register.html"
+    success_url = reverse_lazy("login")
+```
+
+```py
+# members/urls.py
+from django.urls import path
+from members import views
+
+urlpatterns = [
+    path("register/", views.UserRegisterView.as_view(), name="register"),
+]
+```
+یک فولدر به نام templates برای memebers میسازیم و داخل آن فولدر دیگری به نام registration میسازیم و درون این فولدر login.htmlو register.html میسازیم:
+
+```html
+<!-- members/templates/registration/login.html -->
+{% extends 'posts/base.html'%} {% block title %} Login {%endblock %} {% block content %}
+<h1>Login...</h1>
+<br />
+
+<div class="form-group">
+  <form method="POST">
+    {% csrf_token %} {{ form.as_p }}
+    <button class="btn btn-secondary">Login</button>
+  </form>
+</div>
+{% endblock %}
+
+```
+
+```html
+<!-- members/templates/registration/register.html -->
+{% extends 'posts/base.html'%} {% block title %} Register {%endblock %} {% block content %}
+<h1>Register...</h1>
+<br />
+
+<div class="form-group">
+  <form method="POST">
+    {% csrf_token %} {{ form.as_p }}
+    <button class="btn btn-secondary">Register</button>
+  </form>
+</div>
+{% endblock %}
+
+```
+
+جنگو دارای تابعی فیلدی است که نشان میدهد آیا user شناخته شده است یا نه (authenticated).
+در template های موجود در posts از این فیلد استفاده میکنیم تا اجزای دستری به پست ها در صورتی که یوزر لاگین نکرده باشد را بگیریم.
+
+به عنوان مثال در update_post.html داریم:
+
+```html
+{% extends 'posts/base.html'%} {% block title %} Edit Blog Post {%endblock %}
+{%block content %} {% if user.is_authenticated %}
+<h1>Update Post...</h1>
+<br />
+
+<div class="form-group">
+  <form method="POST">
+    {% csrf_token %} {{ form.as_p }}
+    <button class="btn btn-secondary">Update</button>
+  </form>
+</div>
+{%else%} you are not allowed here{%endif%} {% endblock %}
+```
+درصورتی که یوزر لاگین کرده باشد مقدار user.is_authenticated برابر با True است و در غیر این صورت مقدار آن Flase است و با توجه به آن تصمیم میگیریم که چه چیزی به کاربر نمایش دهیم.
+
+همچنین برای تمپلیت های دیگر تغییرات را اعمال کردیم که میتونید در source code موجود در ریپو کامیت مربوط بهش رو ببینید.

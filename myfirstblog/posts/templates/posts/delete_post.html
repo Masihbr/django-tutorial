@@ -1,5 +1,5 @@
 {% extends 'posts/base.html'%} {% block title %} Delete Blog Post {%endblock %}
-{% block content %}
+{% block content %} {% if user.is_authenticated%}
 <h1>Delete Post...</h1>
 <br />
 <br />
@@ -12,4 +12,4 @@
     <button class="btn btn-danger">Delete Post!</button>
   </form>
 </div>
-{% endblock %}
+{%else%} you are not allowed here{%endif%} {% endblock %}
