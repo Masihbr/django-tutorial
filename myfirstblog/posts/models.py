@@ -1,6 +1,6 @@
-from typing_extensions import Required
 from django.db import models
 from django.contrib.auth.models import User
+from django.urls import reverse
 
 
 class Post(models.Model):
@@ -16,3 +16,6 @@ class Post(models.Model):
         if not self.title_tag or self.title_tag == "":
             self.title_tag = self.title
         return super(Post, self).save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse("post-detail", kwargs={"pk": self.pk})

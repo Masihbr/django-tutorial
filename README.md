@@ -596,3 +596,111 @@ python manage.py migrate
 ```
 
 پس از اعمال کامند های بالا دیتابیس آپدیت میشود.
+
+### ساخت صفحه برای ایجاد Post
+
+همونطور که قبلا گفتیم برای ایجاد یک ویو جدید باید view, url, template ساخته بشه.
+
+برای ساخت Post میتونی از CreateView استفاده کنیم:
+
+```py
+# posts/views.py
+from django.views.generic import CreateView
+class AddPostView(CreateView):
+    model = Post
+    template_name = "posts/add_post.html"
+    fields = "__all__"
+```
+
+fields موجود در کلاس بالا مشخص میکند که کدام فیلد های مربوط به Post در Form داده میشوند. در صورتی که نخواهیم همه‌ی فیلدهارو در فرم داشته باشیم میتونیم به راحتی به عنوان یک tuple اسم فیلد هارو بنویسیم به عنوان مثال اگر فقط title , body رو میخواستیم داشتیم:
+
+```py
+# posts/views.py
+from django.views.generic import CreateView
+class AddPostView(CreateView):
+    model = Post
+    template_name = "posts/add_post.html"
+    fields = ("title", "body")
+
+```
+
+برای url داریم:
+
+```py
+from django.urls import path
+from posts import views
+
+urlpatterns = [
+    path("", views.HomeView.as_view(), name="home"),  # for genericView
+    # path("", views.homeView, name="home"),  # for regular view
+    path("<int:pk>/", views.PostDetailView.as_view(), name="post-detail"),
+    path("add-post/", views.AddPostView.as_view(), name="add-post"),
+]
+```
+
+و در نهایت برای template داریم:
+
+```html
+<!-- templates/posts/add_post.html -->
+{% extends 'posts/base.html'%} {% block title %} Create A New Blog Post {%
+endblock %} {% block content %}
+<h1>Add Post...</h1>
+<br />
+<form method="POST">
+  {% csrf_token %} {{ form.as_p }}
+  <button class="btn btn-secondary">post</button>
+</form>
+{% endblock %}
+```
+
+در فرم بالا از csrf_token استفاده کردیم که باعث جلوگیری از حملات به سرور میشود.
+همچنین CreateView یک context به نام form به تمپلیت میدهد که با استفاده از form.as_p میتوان آن را به صورت پاراگراف گرفت. روش های دیگری مانند as_table, as_ul هم وجود دارند که میتونید مطالعه کنید راجع بهشون.
+
+اگر این کار ها رو انجام بدید و پروژه رو ران کنید و یک پست بسازیر با خطا مواجه میشید زیرا بعد از ساخت پست جنگو میخواهد به یک url ریدایرکت بشه در حالی که ما چیزی برای اون ست نکردیم
+
+این کار روی میتونیم در مدل ست کنیم:
+
+```py
+# posts/models.py
+
+from django.db import models
+from django.contrib.auth.models import User
+from django.urls import reverse
+
+
+class Post(models.Model):
+    title = models.CharField(max_length=255)
+    title_tag = models.CharField(max_length=255, null=True, blank=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
+    body = models.TextField()
+
+    def __str__(self) -> str:
+        return self.title + " | " + str(self.author)
+
+    def save(self, *args, **kwargs):
+        if not self.title_tag or self.title_tag == "":
+            self.title_tag = self.title
+        return super(Post, self).save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse("post-detail", kwargs={"pk": self.pk})
+
+```
+
+تابع get_absolute_url بعد از ساخت پست آن را به صفحه post-detail هدایت میکنه.
+
+میتوان به جای صفحه detail به home برگردیم که به صورت زیر میشد:
+
+```py
+    def get_absolute_url(self):
+        return reverse("home")
+```
+
+
+در ضمن در base.html تغییر زیر را انجام دادیم:
+
+```html
+  <a class="nav-link" href="{% url 'add-post' %}">Add Post</a>
+```
+که در نوبار در صورت کلیک به add-post هدایت میشیم.
+
