@@ -696,11 +696,73 @@ class Post(models.Model):
         return reverse("home")
 ```
 
-
 در ضمن در base.html تغییر زیر را انجام دادیم:
 
 ```html
-  <a class="nav-link" href="{% url 'add-post' %}">Add Post</a>
+<a class="nav-link" href="{% url 'add-post' %}">Add Post</a>
 ```
+
 که در نوبار در صورت کلیک به add-post هدایت میشیم.
 
+### استفاده از form برای ساخت Post
+
+میتوان با استفاده از django.forms به فرم مورد نظرمون استایل بدیم و ui زیبا تری داشته باشیم.
+
+در ابتدا یک فایل با نام forms.py در اپ posts ایجاد میکنیم و کد زیر را داخل اون قرار میدیم:
+
+```py
+# posts/forms.py
+
+from django import forms
+from posts.models import Post
+class PostForm(forms.ModelForm):
+    class Meta:
+        model = Post
+        fields = ("title", "title_tag", "author", "body")
+
+        widgets = {
+            "title": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "your Title"}
+            ),
+            "title_tag": forms.TextInput(attrs={"class": "form-control"}),
+            "author": forms.Select(attrs={"class": "form-control"}),
+            "body": forms.Textarea(
+                attrs={"class": "form-control", "placeholder": "your Body"}
+            ),
+        }
+
+```
+
+با استفاده از widegets و fields مقادیر موجود در فرم و استایل آن هارا ست میکنیم.
+
+در AddPostView نیز تغییرات زیر رو انجام میدیم:
+
+```py
+# posts/views.py
+from posts.forms import PostForm
+
+class AddPostView(CreateView):
+    model = Post
+    form_class = PostForm
+    template_name = "posts/add_post.html"
+
+```
+
+دقت کنید که fields از AddPostView حذف شد زیرا در PostForm و در کلاس meta اش ست شده.
+
+در نهایت نیز add_post.html به صورت زیر تغییر میکند:
+
+```html
+{% extends 'posts/base.html'%} {% block title %} Create A New Blog Post
+{%endblock %} {% block content %}
+<h1>Add Post...</h1>
+<br />
+
+<div class="form-group">
+  <form method="POST">
+    {% csrf_token %} {{ form.as_p }}
+    <button class="btn btn-secondary">post</button>
+  </form>
+</div>
+{% endblock %}
+```
