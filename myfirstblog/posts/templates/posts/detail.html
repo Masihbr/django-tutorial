@@ -1,7 +1,10 @@
-{% extends 'posts/base.html'%} {% block title %} {{ post.title_tag }} {% endblock %}
-{% block content %}
+{% extends 'posts/base.html'%} {% block title %} {{ post.title_tag }}
+{%endblock%} {% block content %}
 <h1>{{ post.title }}</h1>
-<small>By: {{ post.author.first_name }} {{ post.author.last_name }} - <a href="{% url 'update-post' post.pk %}">(edit)</a></small
+<small
+  >By: {{ post.author.first_name }} {{ post.author.last_name }} -
+  <a href="{% url 'update-post' post.pk %}">(edit)</a>
+  <a href="{% url 'delete-post' post.pk %}">(delete)</a></small
 ><br />
 <hr />
 {{ post.body }}

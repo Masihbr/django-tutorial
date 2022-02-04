@@ -1,5 +1,13 @@
+from django.urls import reverse_lazy
+
 from django.shortcuts import render
-from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.views.generic import (
+    ListView,
+    DetailView,
+    CreateView,
+    UpdateView,
+    DeleteView,
+)
 from posts.models import Post
 from posts.forms import CreatePostForm, UpdatePostForm
 
@@ -27,7 +35,14 @@ class AddPostView(CreateView):
     form_class = CreatePostForm
     template_name = "posts/add_post.html"
 
+
 class UpdatePostView(UpdateView):
     model = Post
-    template_name ="posts/update_post.html"
+    template_name = "posts/update_post.html"
     form_class = UpdatePostForm
+
+
+class DeletePostView(DeleteView):
+    model = Post
+    template_name = "posts/delete_post.html"
+    success_url = reverse_lazy("home")

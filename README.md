@@ -869,3 +869,110 @@ block content %}
 </ul>
 {% endblock %}
 ```
+
+### حذف کردن Post
+
+بدون اتلاف وقت به سراغ کد میریم:
+
+```py
+# posts/views.py
+from django.views.generic import DeleteView
+
+class DeletePostView(DeleteView):
+    model = Post
+    template_name = "posts/delete_post.html"
+```
+
+```py
+# posts/urls.py
+from django.urls import path
+from posts import views
+
+urlpatterns = [
+    path("", views.HomeView.as_view(), name="home"),  # for genericView
+    # path("", views.homeView, name="home"),  # for regular view
+    path("<int:pk>/", views.PostDetailView.as_view(), name="post-detail"),
+    path("add-post/", views.AddPostView.as_view(), name="add-post"),
+    path("edit/<int:pk>/", views.UpdatePostView.as_view(), name="update-post"),
+    path("delete/<int:pk>/", views.DeletePostView.as_view(), name="delete-post")
+]
+
+```
+
+```html
+<!-- posts/templates/posts/delete_post.html -->
+{% extends 'posts/base.html'%} {% block title %} Delete Blog Post {%endblock %}
+{% block content %}
+<h1>Delete Post...</h1>
+<br />
+<br />
+<h3>Delete: {{ post.title}}</h3>
+<div class="form-group">
+  <form method="POST">
+    {% csrf_token %}
+    <strong>Are You Sure?</strong>
+    <br /><br />
+    <button class="btn btn-danger">Delete Post!</button>
+  </form>
+</div>
+{% endblock %}
+```
+
+detail.htmlو home.html نیز تغییراتی داشتند:
+
+
+```html
+<!-- posts/templates/posts/detail.html -->
+{% extends 'posts/base.html'%} {% block title %} {{ post.title_tag }}
+{%endblock%} {% block content %}
+<h1>{{ post.title }}</h1>
+<small
+  >By: {{ post.author.first_name }} {{ post.author.last_name }} -
+  <a href="{% url 'update-post' post.pk %}">(edit)</a>
+  <a href="{% url 'delete-post' post.pk %}">(delete)</a></small
+><br />
+<hr />
+{{ post.body }}
+
+<br />
+<br />
+<a href="{% url 'home' %}" class="btn btn-secondary">back</a>
+{% endblock %}
+
+```
+
+```html
+<!-- posts/templates/posts/home.html -->
+{% extends 'posts/base.html'%} {% block content %}
+<h1>Post</h1>
+<ul>
+  {% for post in posts %}
+  <li>
+    <a href="{% url 'post-detail' post.pk %}">{{ post.title }}</a> -
+    {{post.author.first_name }} {{ post.author.last_name }} -
+    <small><a href="{% url 'update-post' post.pk %}">(edit)</a></small>
+    <small><a href="{% url 'delete-post' post.pk %}">(delete)</a></small>
+    <br />
+    {{ post.body }}
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}
+
+```
+
+
+به نظر همه چیز خوب میاید اما یک مشکل وجود دارد و آن این است بعد از حذف پست به کجا ریدایرکت شویم؟
+برای تعیین آن به View داده شده فیلد success_url را پاس میدهیم:
+
+```py
+from django.urls import reverse_lazy
+
+class DeletePostView(DeleteView):
+    model = Post
+    template_name = "posts/delete_post.html"
+    success_url = reverse_lazy("home")
+```
+
+دلیل استفاده از reverse_lazy به دلیل مشکلات circular import هست.
+
