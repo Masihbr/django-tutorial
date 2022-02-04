@@ -715,7 +715,7 @@ class Post(models.Model):
 
 from django import forms
 from posts.models import Post
-class PostForm(forms.ModelForm):
+class CreatePostForm(forms.ModelForm):
     class Meta:
         model = Post
         fields = ("title", "title_tag", "author", "body")
@@ -739,16 +739,16 @@ class PostForm(forms.ModelForm):
 
 ```py
 # posts/views.py
-from posts.forms import PostForm
+from posts.forms import CreatePostForm
 
 class AddPostView(CreateView):
     model = Post
-    form_class = PostForm
+    form_class = CreatePostForm
     template_name = "posts/add_post.html"
 
 ```
 
-دقت کنید که fields از AddPostView حذف شد زیرا در PostForm و در کلاس meta اش ست شده.
+دقت کنید که fields از AddPostView حذف شد زیرا در CreatePostForm و در کلاس meta اش ست شده.
 
 در نهایت نیز add_post.html به صورت زیر تغییر میکند:
 
@@ -764,5 +764,108 @@ class AddPostView(CreateView):
     <button class="btn btn-secondary">post</button>
   </form>
 </div>
+{% endblock %}
+```
+
+### آپدیت کردن پست
+
+همونطور که حدس میزنید باید چه کاری انجام بدیم شروع میکنی به ساخت ویو:«
+
+```py
+# posts/views.py
+from django.views.generic import UpdateView
+
+class UpdatePostView(UpdateView):
+    model = Post
+    template_name ="posts/update_post.html"
+    form_class = UpdatePostForm
+```
+
+```py
+# posts/forms.py
+
+class UpdatePostForm(forms.ModelForm):
+    class Meta:
+        model = Post
+        fields = ("title", "title_tag", "body")
+
+        widgets = {
+            "title": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "your Title"}
+            ),
+            "title_tag": forms.TextInput(attrs={"class": "form-control"}),
+            "body": forms.Textarea(
+                attrs={"class": "form-control", "placeholder": "your Body"}
+            ),
+        }
+
+```
+
+```py
+# posts/urls.py
+from django.urls import path
+from posts import views
+
+urlpatterns = [
+    path("", views.HomeView.as_view(), name="home"),  # for genericView
+    # path("", views.homeView, name="home"),  # for regular view
+    path("<int:pk>/", views.PostDetailView.as_view(), name="post-detail"),
+    path("add-post/", views.AddPostView.as_view(), name="add-post"),
+    path("edit/<int:pk>/", views.UpdatePostView.as_view(), name="update-post")
+]
+
+```
+
+```html
+<!-- posts/templates/posts/update_post.html -->
+{% extends 'posts/base.html'%} {% block title %} Edit Blog Post {%endblock %} {%
+block content %}
+<h1>Update Post...</h1>
+<br />
+
+<div class="form-group">
+  <form method="POST">
+    {% csrf_token %} {{ form.as_p }}
+    <button class="btn btn-secondary">Update</button>
+  </form>
+</div>
+{% endblock %}
+```
+
+همچنینی تغییراتی در detail.html و home.html دادیم تا گزینه برای ادیت کردن داشته باشیم:
+
+```html
+<!-- posts/templates/posts/detail.html -->
+{% extends 'posts/base.html'%} {% block title %} {{ post.title_tag }} {%endblock
+%} {% block content %}
+<h1>{{ post.title }}</h1>
+<small
+  >By: {{ post.author.first_name }} {{ post.author.last_name }} -
+  <a href="{% url 'update-post' post.pk %}">(edit)</a></small
+><br />
+<hr />
+{{ post.body }}
+
+<br />
+<br />
+<a href="{% url 'home' %}" class="btn btn-secondary">back</a>
+{% endblock %}
+```
+
+```html
+<!-- posts/templates/posts/home.html -->
+{% extends 'posts/base.html'%} {% block content %}
+<h1>Post</h1>
+<ul>
+  {% for post in posts %}
+  <li>
+    <a href="{% url 'post-detail' post.pk %}">{{ post.title }}</a> -
+    {{post.author.first_name }} {{ post.author.last_name }} -
+    <small><a href="{% url 'update-post' post.pk %}">(edit)</a></small>
+    <br />
+    {{ post.body }}
+  </li>
+  {% endfor %}
+</ul>
 {% endblock %}
 ```
