@@ -920,7 +920,6 @@ urlpatterns = [
 
 detail.htmlو home.html نیز تغییراتی داشتند:
 
-
 ```html
 <!-- posts/templates/posts/detail.html -->
 {% extends 'posts/base.html'%} {% block title %} {{ post.title_tag }}
@@ -938,7 +937,6 @@ detail.htmlو home.html نیز تغییراتی داشتند:
 <br />
 <a href="{% url 'home' %}" class="btn btn-secondary">back</a>
 {% endblock %}
-
 ```
 
 ```html
@@ -958,9 +956,7 @@ detail.htmlو home.html نیز تغییراتی داشتند:
   {% endfor %}
 </ul>
 {% endblock %}
-
 ```
-
 
 به نظر همه چیز خوب میاید اما یک مشکل وجود دارد و آن این است بعد از حذف پست به کجا ریدایرکت شویم؟
 برای تعیین آن به View داده شده فیلد success_url را پاس میدهیم:
@@ -976,3 +972,110 @@ class DeletePostView(DeleteView):
 
 دلیل استفاده از reverse_lazy به دلیل مشکلات circular import هست.
 
+### اضافه کردن created_at و updated_at به پست
+
+میخواهیم در قسمت home پست هار ا بر اساس آخرین تغییرات مرتب کنیم برای اینکار به دو فیلد بالا نیازمندیم پس به Post اضافه میکنیم:
+
+```py
+# posts/models.py
+from django.db import models
+from django.contrib.auth.models import User
+from django.urls import reverse
+
+
+class Post(models.Model):
+    title = models.CharField(max_length=255)
+    title_tag = models.CharField(max_length=255, null=True, blank=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
+    body = models.TextField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return self.title + " | " + str(self.author)
+
+    def save(self, *args, **kwargs):
+        if not self.title_tag or self.title_tag == "":
+            self.title_tag = self.title
+        return super(Post, self).save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse("post-detail", kwargs={"pk": self.pk})
+
+```
+
+اتریبیوت auto_now_add تنها در زمان ساخته شدن آبجکت مقدار ست میکند اما auto_now به ازای هر تغییر در دیتابیس مقدار جدید برای خود میگیرد.
+
+
+سپس makemigrations و مایگریشن را انجام میدهیم. هنکگام ساختن مایگریشن با پیامی مواجه میشویم که باید مقدار دیفالت برای این فیلد ها داشته باشیم. این به دلیل وجود پست هایی از قبل در داخل دیتابیس است که قبل از این تغییرات چنین فیلد هایی نداشتند پس باید یک مقدار دیفالت داشته باشندم برای راحتی میتوان گزینه 1 را انتخاب کرد و از مقدار دیفالت timezone.now استقفاده کرد.
+
+و سپس داریم
+
+```
+python manage.py migrate
+```
+
+سپس در کلاس HomeView با استفاده از فیلد ordering ترتیب آن را ست میکنیم:
+
+```py
+class HomeView(ListView):
+    model = Post
+    template_name = "posts/home.html"
+    context_object_name = "posts"
+    ordering = ["-updated_at", "-created_at"]
+```
+
+و میتوان از این فیلد ها در home.html و detail.html نیز استفاده کرد:
+
+```html
+<!-- detail.html -->
+{% extends 'posts/base.html'%} {% block title %} {{ post.title_tag }}
+{%endblock%} {% block content %}
+<h1>{{ post.title }}</h1>
+<small
+  >By: {{ post.author.first_name }} {{ post.author.last_name }} -
+  <a href="{% url 'update-post' post.pk %}">(edit)</a>
+  <a href="{% url 'delete-post' post.pk %}">(delete)</a>
+  <br />
+
+  Published At: {{ post.created_at }}
+  <br />
+  Edited At: {{ post.updated_at }}
+</small>
+<br />
+
+<br />
+<hr />
+{{ post.body }}
+
+<br />
+<br />
+<a href="{% url 'home' %}" class="btn btn-secondary">back</a>
+{% endblock %}
+```
+
+```html
+<!-- home.html -->
+{% extends 'posts/base.html'%} {% block content %}
+<h1>Post</h1>
+<ul>
+  {% for post in posts %}
+  <li>
+    <a href="{% url 'post-detail' post.pk %}">{{ post.title }}</a> -
+    {{post.author.first_name }} {{ post.author.last_name }} -
+    <small><a href="{% url 'update-post' post.pk %}">(edit)</a></small>
+    <small><a href="{% url 'delete-post' post.pk %}">(delete)</a></small>
+    <small>
+      <br />
+      Edited At: {{ post.updated_at }}
+      <br />
+      Published At: {{ post.created_at }}
+    </small>
+    <br />
+    {{ post.body }}
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}
+```

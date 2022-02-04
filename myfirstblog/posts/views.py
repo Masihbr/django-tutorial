@@ -22,6 +22,7 @@ class HomeView(ListView):
     model = Post
     template_name = "posts/home.html"
     context_object_name = "posts"
+    ordering = ["-updated_at", "-created_at"]
 
 
 class PostDetailView(DetailView):

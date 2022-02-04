@@ -4,8 +4,16 @@
 <small
   >By: {{ post.author.first_name }} {{ post.author.last_name }} -
   <a href="{% url 'update-post' post.pk %}">(edit)</a>
-  <a href="{% url 'delete-post' post.pk %}">(delete)</a></small
-><br />
+  <a href="{% url 'delete-post' post.pk %}">(delete)</a>
+  <br />
+
+  Published At: {{ post.created_at }}
+  <br />
+  Edited At: {{ post.updated_at }}
+</small>
+<br />
+
+<br />
 <hr />
 {{ post.body }}
 
