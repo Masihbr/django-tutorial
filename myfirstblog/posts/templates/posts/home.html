@@ -2,7 +2,8 @@
 <ul>
   {% for post in posts %}
   <li>
-    {{ post.title }} - {{ post.author.first_name }} {{ post.author.last_name }}
+    <a href="{% url 'post-detail' post.pk %}">{{ post.title }}</a> - 
+    {{ post.author.first_name }} {{ post.author.last_name }}
     <br />
     {{ post.body }}
   </li>

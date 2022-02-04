@@ -430,3 +430,74 @@ urlpatterns = [
 
 در تمپلیت داده شده از سینتکس پایتون استفاده کردیم که یکی از نقاط قوت تمپلیت جنگو است. برای استفاده از این سینتکس از {% %} استفاده میکنیم و برای استفاده ازdata ها آن هارا داخل {{ }} قرار میدهیم. کد بالا بر روی posts موجود در context پاس داده شده توسط view فور میزند و به ازای هر پست تایتل آن و نام و نام خانوادگی نویسنده و بدنه پست را چاپ میکند.
 
+## DetailView
+
+حال نیاز به ویو‌ای داریم که به ازای هر post اطلاعات آن را به ما بدهد.
+
+برای این کار ویو زیر را با استفاده از DetailView میسازیم:
+
+```py
+# posts/views.py
+from django.views.generic import DetailView
+
+class PostDetailView(DetailView):
+    model = Post
+    template_name = "posts/detail.html"
+    context_object_name = "post"
+```
+
+از آنجا که ما به اطلاعات یک Post نیاز داریم باید با استفاده از primary key موجود در url به جنگو بگوییم که کدام Post را به ما بدهد. برای اینکار در urls.py خواهیم داشت:
+
+```py
+from django.urls import path
+from posts import views
+
+urlpatterns = [
+    path("", views.HomeView.as_view(), name="home"),  # for genericView
+    # path("", views.homeView, name="home"),  # for regular view
+    path("<int:pk>", views.PostDetailView.as_view(), name="post-detail"), # add this line
+]
+
+```
+
+منظور از path بالا این است که اگر url موجود به صورت
+`domain/posts/123`
+بود قسمت 123 را به عنوان pk به PostDetailView پاس دهد و بر اساس آن یک مقدار از دیتابیس به ما برگرداند.
+(دقت کنید که path موجود حتما باید دارای posts/ باشه زیرا اگر خاطرتون باشه در myfirstblog/urls.py و در قسمت پاس دادن posts.urls مقدار posts/ را به عنوان pre-path به آن دادیم)
+
+حال تمپلیت را میسازیم
+
+```html
+<h1>{{ post.title }}</h1>
+<small>By: {{ post.author.first_name }} {{ post.author.last_name }}</small
+><br />
+<hr />
+{{ post.body }}
+
+<br />
+<br />
+<a href="{% url 'home' %}">back</a>
+```
+
+در این قسمت از {% url %} موجود در جنگو استفاده کردیم که بهمون اجازه میده به صورت راحت تر بین url ها جا به جحا بشیم.
+در مثال بالا به ازای کلیک بر روی back به url ای که نام آن home است برمیگردیم که در واقع همان `domain/posts` هست
+
+یک تغییر هم در home.html میدهیم تا به ازای هر پست لینکی به detailView آن داشته باشیم:
+
+```html
+<h1>Post</h1>
+<ul>
+  {% for post in posts %}
+  <li>
+    <a href="{% url 'post-detail' post.pk %}">{{ post.title }}</a>
+    - {{ post.author.first_name }} {{ post.author.last_name }}
+    <br />
+    {{ post.body }}
+  </li>
+  {% endfor %}
+</ul>
+```
+
+در اینجا نیز به ازای کلیک بر روی title پست به detailView آن میرویم. دقت کنید که post.pk را به عنوان ورودی به url با نام post-detail میدهیم.
+(یکبار از template به urls و سپس به views  بروید تا به طور کامل متوجه پاس دادن این pk  بشید :) )
+
