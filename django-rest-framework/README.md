@@ -45,10 +45,16 @@
 ## راه‌اندازی اولیه
 مطابق توضیحات داده شده در بخش جنگو یک پروژه میسازیم. سپس djangorestframework را نصب می‌کنیم.
 
+<div dir="ltr">
+
 ```
 $ pip install djangorestframework
 ```
+</div>
+
 و rest_framework را به INSTALLED_APPS اضافه می‌کنیم
+
+<div dir="ltr">
 
 ```py
 INSTALLED_APPS = [
@@ -60,6 +66,7 @@ INSTALLED_APPS = [
     ...
 ]
 ```
+</div>
 
 میتوانیم کار خود را با drf شروع کنیم.
 
@@ -73,6 +80,8 @@ INSTALLED_APPS = [
 
 به طور مثال در زیر یک سریالایزر برای مدل Post آورده شده است:
 
+<div dir="ltr">
+
 ```py
 class PostSerializer(serializers.ModelSerializer):
 
@@ -81,6 +90,7 @@ class PostSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('author',)
 ```
+</div>
 این سریالایزر همه‌ی فیلدهای پست را شامل می‌شود و همچنین فیلد author را read only کرده است؛ بدین معنی که در هنگام ساخت و یا آپدیت مدل این فیلد توسط ورودی مقداردهی نخواهد شد.
 
 
@@ -95,6 +105,8 @@ class PostSerializer(serializers.ModelSerializer):
 
 به طور کلی با اضافه کردن متودهای زیر به ویوها می‌توان متودهای HTTP گفته شده در بالا را برای آن API استفاده کرد.
 
+
+<div dir="ltr">
 
 ```py
 class SimpleView(APIView):
@@ -111,6 +123,7 @@ class SimpleView(APIView):
     def delete(self, request, *args, **kwargs):
         pass
 ```
+</div>
 
 
 همچنین mixinهای زیر را داریم که این متودها را پیاده‌سازی کرده‌اند و کافی است آن‌ها را اورراید کنیم تا منطقی موردنظر خود را پیاده‌سازی کنیم.
@@ -122,6 +135,9 @@ class SimpleView(APIView):
 - UpdateModelMixin
 
 به طور مثال فرض کنید بخواهیم ویویی برای گرفتن لیست پست‌ها و ساخت پست جدید بسازیم. برای این کار به صورت زیر عمل می‌کنیم:
+
+
+<div dir="ltr">
 
 ```py
 from rest_framework.generics import ListCreateAPIView
@@ -136,7 +152,10 @@ class PostListCreateAPIView(ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 ```
+</div>
  حال کافی است در urls.py این ویو را اضافه کنیم.
+
+<div dir="ltr">
 
  ```py
 urlpatterns = [
@@ -144,6 +163,7 @@ urlpatterns = [
     path('posts/', PostListCreateAPIView.as_view())
 ]
  ```
+ </div>
 
 
 
