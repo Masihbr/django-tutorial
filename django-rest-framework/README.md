@@ -42,4 +42,109 @@
 ### DELETE
 این متود برای حذف یک آبجکت استفاده می‌شود.
 
+## راه‌اندازی اولیه
+مطابق توضیحات داده شده در بخش جنگو یک پروژه میسازیم. سپس djangorestframework را نصب می‌کنیم.
+
+```
+$ pip install djangorestframework
+```
+و rest_framework را به INSTALLED_APPS اضافه می‌کنیم
+
+```py
+INSTALLED_APPS = [
+
+    ...
+    
+    'rest_framework',
+
+    ...
+]
+```
+
+میتوانیم کار خود را با drf شروع کنیم.
+
+به طور کلی روند طراحی API به این صورت است که ما مدل‌های لازم برای پروژه خود را تعریف می‌کنیم. سپس APIهای لازم را بررسی و طراحی می‌کنیم. برای این‌کار باید ویو و سریالایزر را تعریف کنیم که در ادامه به بررسی آن‌ها می‌پردازیم.
+
+
+### Serializer
+سریالایزر یک شی را به دیکشنری در پایتون تبدیل می‌کند و  در نتیجه می‌توان از آن در پاسخ(response) APIها استفاده کرد(به فرمت‌های رایج JSON, XML, ...).
+
+ساده‌ترین نوع سریالایزر یک SubClass از Serializer است که برای پیاده‌سازی کامل آن باید متودهای create, update آن را با توجه به مدل مربوطه پیاده‌سازی کنیم. اما روش راحت‌تر این است که از ModelSerializer استفاده کنیم که خود یک SubClass از Serializer است و دیگر نیاز به پیاده‌سازی دو متود گفته شده نداریم.
+
+به طور مثال در زیر یک سریالایزر برای مدل Post آورده شده است:
+
+```py
+class PostSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Post
+        fields = '__all__'
+        read_only_fields = ('author',)
+```
+این سریالایزر همه‌ی فیلدهای پست را شامل می‌شود و همچنین فیلد author را read only کرده است؛ بدین معنی که در هنگام ساخت و یا آپدیت مدل این فیلد توسط ورودی مقداردهی نخواهد شد.
+
+
+### View
+ویوها را می‌توان به دو دسته تقسیم کرد: 
+
+1. APIView
+
+2. GenericAPIView
+
+تفاوت اصلی GenericAPIView با APIView این است که باید حتما به یک مدل وصل باشد و queryset و serializer_class برای آن مشخص شده باشد.
+
+به طور کلی با اضافه کردن متودهای زیر به ویوها می‌توان متودهای HTTP گفته شده در بالا را برای آن API استفاده کرد.
+
+
+```py
+class SimpleView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        pass
+
+    def post(self, request, *args, **kwargs):
+        pass
+
+    def put(self, request, *args, **kwargs):
+        pass
+
+    def delete(self, request, *args, **kwargs):
+        pass
+```
+
+
+همچنین mixinهای زیر را داریم که این متودها را پیاده‌سازی کرده‌اند و کافی است آن‌ها را اورراید کنیم تا منطقی موردنظر خود را پیاده‌سازی کنیم.
+
+- CreateModelMixin
+- ListModelMixin
+- RetrieveModelMixin
+- DestroyModelMixin
+- UpdateModelMixin
+
+به طور مثال فرض کنید بخواهیم ویویی برای گرفتن لیست پست‌ها و ساخت پست جدید بسازیم. برای این کار به صورت زیر عمل می‌کنیم:
+
+```py
+from rest_framework.generics import ListCreateAPIView
+from rest_framework.permissions import IsAuthenticated
+
+
+class PostListCreateAPIView(ListCreateAPIView):
+    serializer_class = PostSerializer
+    queryset = Post.objects.all()
+    permission_classes = (IsAuthenticated,)
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+```
+ حال کافی است در urls.py این ویو را اضافه کنیم.
+
+ ```py
+urlpatterns = [
+    ...
+    path('posts/', PostListCreateAPIView.as_view())
+]
+ ```
+
+
+
 </div>
