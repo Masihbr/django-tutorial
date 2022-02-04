@@ -499,5 +499,100 @@ urlpatterns = [
 ```
 
 در اینجا نیز به ازای کلیک بر روی title پست به detailView آن میرویم. دقت کنید که post.pk را به عنوان ورودی به url با نام post-detail میدهیم.
-(یکبار از template به urls و سپس به views  بروید تا به طور کامل متوجه پاس دادن این pk  بشید :) )
+(یکبار از template به urls و سپس به views بروید تا به طور کامل متوجه پاس دادن این pk بشید :) )
 
+### زیبا کردن تمپلیت و استفاده از ارثبری
+
+جنگو این امکان رو فراهم که بتونیم با استفاده از ارث بری تمپلیت هایس خودمون رو بهتر و راحتتر بسازیم.
+
+دراین قسمت کمی تمپلیت رو زیباتر میکنیم.
+
+فایل base.html رو در کنار بقیه html ها میسازیم (میتونید محتویات فایل رو از ریپو پروژه کپی کنید).
+
+نکات مهم:
+
+```html
+<title>{% block title %}My First Blog!!!{% endblock %}</title>
+
+<div class="container">{% block content %} {% endblock %}</div>
+```
+
+در این قسمت از بلاک بندی استفاده کردیم که با نام دادن به یک بلاک میتونیم در یک فایل دیگر این بلاک رو اورراید کنیم و مثل این میشه که اون تیکه از html فایل داخل این بلاک کپی میشه.
+
+در این جا هم دو بلاک داریم که در detail و home اون را اورراید میکنیم.
+
+```html
+<!--posts/detail.html -->
+{% extends 'posts/base.html'%} {% block title %} {{ post.title_tag }} {%
+endblock %} {% block content %}
+<h1>{{ post.title }}</h1>
+<small>By: {{ post.author.first_name }} {{ post.author.last_name }}</small
+><br />
+<hr />
+{{ post.body }}
+
+<br />
+<br />
+<a href="{% url 'home' %}" class="btn btn-secondary">back</a>
+{% endblock %}
+```
+
+در بالای فایل detail.html از extends base.html استفاده کردیم که باعث میشه کد هایی که داخل base وجود دارد در این تمپلیت نیز نمایش داده بشه.
+
+پس navbar موجود در base در اینجا نیز نمایش داده میشه.
+
+همچنین برای Post یک فیلد به نام title_tag ساختیم که در ادامه بیشتر توضیح میدیم.
+
+```html
+<!-- posts/home.html -->
+{% extends 'posts/base.html'%} {% block content %}
+<h1>Post</h1>
+<ul>
+  {% for post in posts %}
+  <li>
+    <a href="{% url 'post-detail' post.pk %}">{{ post.title }}</a> -
+    {{post.author.first_name }} {{ post.author.last_name }}
+    <br />
+    {{ post.body }}
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}
+```
+
+همانطور که گفتیم تغییراتی در Post ایجاد کردیم:
+
+```py
+# posts/models.py
+from typing_extensions import Required
+from django.db import models
+from django.contrib.auth.models import User
+
+
+class Post(models.Model):
+    title = models.CharField(max_length=255)
+    title_tag = models.CharField(max_length=255, null=True, blank=True) #added
+    author = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
+    body = models.TextField()
+
+    def __str__(self) -> str:
+        return self.title + " | " + str(self.author)
+
+    def save(self, *args, **kwargs): #added
+        if not self.title_tag or self.title_tag == "":
+            self.title_tag = self.title
+        return super(Post, self).save(*args, **kwargs)
+```
+
+تابع save هنگام ذخیره شدن در دیتابیس صدا زده میشود و اگر title_tage خالی بود آن را با استفاده از title پر میکند و سیو میکند.
+
+همچنین برای title_tag مقدار blank=True و null=True در نظر گرفتیم تا برای آن پست هایی که قبل از مایگریشن این فیلد را نداشتند مشکلی پیش نیاید
+
+باید مایگریشن بسازیم
+
+```
+python manage.py makemigrations
+python manage.py migrate
+```
+
+پس از اعمال کامند های بالا دیتابیس آپدیت میشود.
